@@ -1,0 +1,9 @@
+#binary directory
+bin/
+
+#visual studio cache
+.vs/
+#App data dir:
+
+#obj:
+obj/

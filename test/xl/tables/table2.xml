@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="xr xr3"
+    xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"
+    xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3" id="2" xr:uid="{B8011688-04A8-4A6E-B26E-E134BC858FC1}" name="Table2" displayName="Table2" ref="E1:F7" totalsRowShown="0">
+    <autoFilter ref="E1:F7" xr:uid="{7AC1ED26-BF93-40FE-8A8C-BF85211005ED}"/>
+    <tableColumns count="2">
+        <tableColumn id="1" xr3:uid="{57E1EBA9-10DB-4E4B-BFE5-D36FA10ADB77}" name="ID">
+            <calculatedColumnFormula>ROW(E2)-1</calculatedColumnFormula>
+        </tableColumn>
+        <tableColumn id="2" xr3:uid="{2757D230-58DC-46E9-9686-3EB5F399744C}" name="Value">
+            <calculatedColumnFormula>E2*1000+ 198</calculatedColumnFormula>
+        </tableColumn>
+    </tableColumns>
+    <tableStyleInfo name="TableStyleLight8" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>
+</table>

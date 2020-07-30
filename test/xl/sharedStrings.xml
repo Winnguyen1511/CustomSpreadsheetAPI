@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="16" uniqueCount="15">
+    <si>
+        <t>TT</t>
+    </si>
+    <si>
+        <t>Name</t>
+    </si>
+    <si>
+        <t>SDT</t>
+    </si>
+    <si>
+        <t>Khoa</t>
+    </si>
+    <si>
+        <t>Lang</t>
+    </si>
+    <si>
+        <t>ID</t>
+    </si>
+    <si>
+        <t>Value</t>
+    </si>
+    <si>
+        <t>Số Công Văn</t>
+    </si>
+    <si>
+        <t>Ngày Công Văn</t>
+    </si>
+    <si>
+        <t>Ghi chú</t>
+    </si>
+    <si>
+        <t>Công Văn số 1/ABC</t>
+    </si>
+    <si>
+        <t>Công Văn số Thanh Tra</t>
+    </si>
+    <si>
+        <t>Có thể thay đổi</t>
+    </si>
+    <si>
+        <t>Công Văn số 2/CPCITC</t>
+    </si>
+    <si>
+        <t>Không xác định</t>
+    </si>
+</sst>
