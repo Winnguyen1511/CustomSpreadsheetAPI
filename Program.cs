@@ -159,7 +159,7 @@ namespace excelExport
             //}
 
             CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_sheets.xlsx");
-            Sheet newsheet = test_sheet.AddNewSheet("mynewsheet3");
+            Sheet newsheet = test_sheet.AddNewSheet("Sheet6");
             if(newsheet != null)
             {
                 Console.WriteLine("Successful add sheets");
@@ -168,8 +168,11 @@ namespace excelExport
             {
                 Console.WriteLine("Failed to add sheets");
             }
-            test_sheet.Save();
-            test_sheet.Close();
+            if(test_sheet.spreadsheet != null)
+            {
+                test_sheet.Save();
+                test_sheet.Close();
+            }
 
             Console.ReadKey();
         }

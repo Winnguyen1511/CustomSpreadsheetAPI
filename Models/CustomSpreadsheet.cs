@@ -20,7 +20,14 @@ namespace excelExport
 
         public void Close()
         {
+
             this.spreadsheet.Close();
+
+            //catch (NullReferenceException ex)
+            //{
+            //    return;
+            //}
+            
         }
 
         //private WorkbookPart
@@ -29,7 +36,16 @@ namespace excelExport
             if (!System.IO.File.Exists(path))
             {
                 this.spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
-                SpreadsheetDocument spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
+                try
+                {
+                    SpreadsheetDocument spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
+                }
+                catch(Exception ex)
+                {
+                    this.spreadsheet = null;
+                    return;
+                }
+                
 
                 WorkbookPart workbookPart = spreadsheet.AddWorkbookPart();
                 workbookPart.Workbook = new Workbook();
@@ -62,6 +78,10 @@ namespace excelExport
         }
         public Sheet AddNewSheet(string sheetName)
         {
+            if (this.spreadsheet == null)
+            {
+                return null;
+            }
             //Only need get first because a document shall have ony 1 workbook
             WorkbookPart workbookPart = this.spreadsheet.GetPartsOfType<WorkbookPart>().First();
             if (workbookPart == null)
@@ -73,7 +93,7 @@ namespace excelExport
             //  New sheet.xml file: which contains data of a sheet
             WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
             worksheetPart.Worksheet = new Worksheet(new SheetData());
-
+            //workbookPart.WorksheetParts.First();
             //  Add to workbook:
             Sheets sheets = spreadsheet.WorkbookPart.Workbook.GetFirstChild<Sheets>();
             uint newSheetID;
