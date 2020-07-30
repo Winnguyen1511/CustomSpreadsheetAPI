@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+
 namespace excelExport
 {
     class Program
@@ -158,7 +159,15 @@ namespace excelExport
             //}
 
             CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_sheets.xlsx");
-            test_sheet.AddNewSheet("mynewsheet");
+            Sheet newsheet = test_sheet.AddNewSheet("mynewsheet3");
+            if(newsheet != null)
+            {
+                Console.WriteLine("Successful add sheets");
+            }
+            else
+            {
+                Console.WriteLine("Failed to add sheets");
+            }
             test_sheet.Save();
             test_sheet.Close();
 
