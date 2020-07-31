@@ -159,38 +159,38 @@ namespace excelExport
             //}
 
             CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_all.xlsx");
-            string sheetName = "mySheet2";
-            Sheet newsheet = test_sheet.AddNewSheet(sheetName);
-            if (newsheet != null)
-            {
-                Console.WriteLine("Successful add sheets");
-            }
-            else
-            {
-                Console.WriteLine("Failed to add sheets");
-                //return;
-            }
-            if (test_sheet.spreadsheet != null)
-            {
-                test_sheet.Save();
-                //test_sheet.Close();
-            }
-            WorksheetPart sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
-            if(sheet1 == null)
-            {
-                Console.WriteLine("There is no {0} in this speadsheet!", sheetName);
-                //return;
-            }
-            else
-            {
-                int maxNum = 20;
-                for(int i = 1; i < maxNum; i++)
-                {
-                    string numStr = "Num"+(i * 100).ToString();
-                    test_sheet.InsertText(numStr, "B", (uint)i, sheet1);
-                }
-                Console.WriteLine("Successful add {0} texts to {1}", maxNum, sheetName);
-            }
+            //string sheetName = "mySheet2";
+            //Sheet newsheet = test_sheet.AddNewSheet(sheetName);
+            //if (newsheet != null)
+            //{
+            //    Console.WriteLine("Successful add sheets");
+            //}
+            //else
+            //{
+            //    Console.WriteLine("Failed to add sheets");
+            //    //return;
+            //}
+            //if (test_sheet.spreadsheet != null)
+            //{
+            //    test_sheet.Save();
+            //    //test_sheet.Close();
+            //}
+            //WorksheetPart sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
+            //if(sheet1 == null)
+            //{
+            //    Console.WriteLine("There is no {0} in this speadsheet!", sheetName);
+            //    //return;
+            //}
+            //else
+            //{
+            //    int maxNum = 20;
+            //    for(int i = 1; i < maxNum; i++)
+            //    {
+            //        string numStr = "Num"+(i * 100).ToString();
+            //        test_sheet.InsertText(numStr, "B", (uint)i, sheet1);
+            //    }
+            //    Console.WriteLine("Successful add {0} texts to {1}", maxNum, sheetName);
+            //}
 
 
             if(test_sheet.spreadsheet != null)
