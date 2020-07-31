@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<x:workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"
+    xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main" mc:Ignorable="x15">
+    <x:fileVersion appName="xl" lastEdited="6" lowestEdited="6" rupBuild="14420" />
+    <x:workbookPr defaultThemeVersion="164011" />
+    <x:bookViews>
+        <x:workbookView xWindow="0" yWindow="0" windowWidth="22260" windowHeight="12645" />
+    </x:bookViews>
+    <x:sheets>
+        <x:sheet name="Sheet1" sheetId="1" r:id="rId1" />
+    </x:sheets>
+    <x:calcPr calcId="162913" />
+    <x:extLst>
+        <x:ext xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main" uri="{140A7094-0E35-4892-8432-C4D2E57EDEB5}">
+            <x15:workbookPr chartTrackingRefBase="1" />
+        </x:ext>
+    </x:extLst>
+</x:workbook>
