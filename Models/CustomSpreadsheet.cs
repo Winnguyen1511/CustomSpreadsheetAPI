@@ -12,6 +12,21 @@ namespace excelExport
 {
     class CustomSpreadsheet
     {
+        private enum Formats
+        {
+            General = 0,
+            Number = 1,
+            Decimal = 2,
+            Currency = 164,
+            Accounting = 44,
+            DateShort = 14,
+            DateLong = 165,
+            Time = 166,
+            Percentage = 10,
+            Fraction = 12,
+            Scientific = 11,
+            Text = 49
+        }
         public SpreadsheetDocument spreadsheet { get; set; }
         public WorkbookPart workbook { get; set; }
         public SharedStringTablePart sharedStrings { get; set; }
@@ -24,14 +39,7 @@ namespace excelExport
 
         public void Close()
         {
-
             this.spreadsheet.Close();
-
-            //catch (NullReferenceException ex)
-            //{
-            //    return;
-            //}
-            
         }
 
         //private WorkbookPart
@@ -233,7 +241,63 @@ namespace excelExport
             worksheetPart.Worksheet.Save();
             return true;
         }
+        public bool DeleteCell(string columnName, uint rowIndex, WorksheetPart wsPart=null, bool force=false)
+        {
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return false;
+            }
 
+            //IEnumerable<Sheet> sheets = this.workbook.Workbook.GetFirstChild<Sheets>()
+            //                                .Elements<Sheet>().Where(s => s.Name == )
+            if (wsPart == null)
+            {
+                if (force == true)
+                {
+                    if (this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if (wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return false;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
+                    return false;
+                }
+            }
+            Cell cell = GetCellFromWorksheet(columnName, rowIndex, wsPart);
+            if(cell == null)
+            {
+                Console.WriteLine("Error: no such cell at {0}!", columnName + rowIndex);
+                return false;
+            }
+            int sharedStringId;
+            if (cell.DataType != null &&
+                cell.DataType.Value == CellValues.SharedString)
+            {
+                sharedStringId = int.Parse(cell.InnerText);
+                cell.Remove();
+                this.RemoveSharedStringItem(sharedStringId);
+            }
+            else
+            {
+                cell.Remove();
+            }
+            wsPart.Worksheet.Save();
+            return true;
+            
+        }
         // If Force == true: Get the first sheet to insert, regardless the name;
         public string GetCellValue(string addressName, WorksheetPart wsPart=null, bool force=false)
         {
@@ -349,7 +413,76 @@ namespace excelExport
             this.sharedStrings.SharedStringTable.Save();
             return i;
         }
+        public int RemoveSharedStringItem(int sharedStringId)
+        {
+            bool remove = true;
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return -1;
+            }
+            foreach(var part in this.workbook.GetPartsOfType<WorksheetPart>())
+            {
+                Worksheet worksheet = part.Worksheet;
+                foreach(var cell in worksheet.GetFirstChild<SheetData>().Descendants<Cell>())
+                {
+                    if(cell.DataType != null &&
+                        cell.DataType.Value == CellValues.SharedString &&
+                        cell.CellValue.Text == sharedStringId.ToString())
+                    {
+                        remove = false;
+                        break;
+                    }
+                }
+                if (!remove)
+                    break;
+            }
+            if(remove)
+            {
+                if(this.sharedStrings == null)
+                {
+                    Console.WriteLine("Error: This spreadsheet has no sharedString table!");
+                    return -1;
+                }
+                SharedStringItem item = this.sharedStrings.SharedStringTable
+                                        .Elements<SharedStringItem>().ElementAt(sharedStringId);
+                if(item != null)
+                {
+                    item.Remove();
 
+                    //  Refresh all the shared string references.
+                    foreach (var part in this.workbook.GetPartsOfType<WorksheetPart>())
+                    {
+                        Worksheet worksheet = part.Worksheet;
+                        foreach(var cell in worksheet.GetFirstChild<SheetData>().Descendants<Cell>())
+                        {
+                            if(cell.DataType != null &&
+                                cell.DataType.Value == CellValues.SharedString)
+                            {
+                                int itemIndex = int.Parse(cell.CellValue.Text);
+                                if(itemIndex > sharedStringId)
+                                {
+                                    cell.CellValue.Text = (itemIndex - 1).ToString();
+                                }
+                            }
+                        }
+                        worksheet.Save();
+                    }
+                    this.sharedStrings.SharedStringTable.Save();
+                }
+                else
+                {
+                    Console.WriteLine("Warning: No item found at {0}!", sharedStringId);
+                    return -1;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Warning: No shared string item deleted!");
+                return -1;
+            }
+            return sharedStringId;
+        }
         public WorksheetPart InsertWorksheet()
         {
             if(this.workbook == null)
@@ -421,5 +554,24 @@ namespace excelExport
             }
         }
 
+        public Cell GetCellFromWorksheet(string columnName, uint rowIndex, WorksheetPart worksheetPart)
+        {
+            IEnumerable<Row> rows = worksheetPart.Worksheet.GetFirstChild<SheetData>().Elements<Row>()
+                                    .Where(r => r.RowIndex == rowIndex);
+            if(rows.Count() == 0)
+            {
+                Console.WriteLine("Error: No such row at {0} found.", rowIndex);
+                return null;
+            }
+            IEnumerable<Cell> cells = rows.First().Elements<Cell>()
+                                        .Where(c => string.Compare(c.CellReference.Value, columnName + rowIndex, true) == 0);
+            if(cells.Count() == 0)
+            {
+                Console.WriteLine("Error: No such cell at {0} found!", columnName + rowIndex);
+                return null;
+            }
+            return cells.First();
+        }
+        
     }
 }

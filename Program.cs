@@ -158,7 +158,7 @@ namespace excelExport
             //    AddDataSpreadsheetWorkBook("G:\\Csharp\\excelExport\\test_sheets.xlsx", "A", i, "200");
             //}
 
-            CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_all.xlsx");
+            CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_style.xlsx");
             string sheetName = "mySheet2";
             WorksheetPart newsheet = test_sheet.AddNewSheet(sheetName);
             if (newsheet != null)
@@ -199,7 +199,7 @@ namespace excelExport
             Console.WriteLine(">> Test default sheet, Getting first 5 A-row:");
             for (int i = 1; i <= 5; i++)
             {
-                string tmp = test_sheet.GetCellValue("A" + i,null,true);
+                string tmp = test_sheet.GetCellValue("A" + i, null, true);
                 Console.WriteLine("A{0}: {1}", i, tmp);
             }
 
@@ -207,7 +207,7 @@ namespace excelExport
             WorksheetPart getSheet = test_sheet.GetWorksheetPartByName("mySheet2");
             for (int i = 1; i <= 15; i++)
             {
-                string tmp = test_sheet.GetCellValue("C" + i,getSheet);
+                string tmp = test_sheet.GetCellValue("C" + i, getSheet);
                 Console.WriteLine("C{0}: {1}", i, tmp);
             }
 
@@ -219,6 +219,14 @@ namespace excelExport
                 Console.WriteLine("D{0}: {1}", i, tmp);
             }
 
+            Console.WriteLine(">> Test delete text, :");
+            getSheet = test_sheet.GetWorksheetPartByName("Sheet1");
+            for (int i = 1; i <= 4; i++)
+            {
+                bool res = test_sheet.DeleteCell("A", (uint)i, getSheet);
+                if (res == true)
+                    Console.WriteLine("Deleted cell at {0}!", "A" + i);
+            }
             if (test_sheet.spreadsheet != null)
             {
                 test_sheet.Save();
