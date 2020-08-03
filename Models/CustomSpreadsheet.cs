@@ -39,10 +39,10 @@ namespace excelExport
         {
             if (!System.IO.File.Exists(path))
             {
-                this.spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
+                //this.spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
                 try
                 {
-                    SpreadsheetDocument spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
+                    this.spreadsheet = SpreadsheetDocument.Create(path, SpreadsheetDocumentType.Workbook);
                 }
                 catch(Exception ex)
                 {
@@ -51,17 +51,19 @@ namespace excelExport
                 }
                 
 
-                WorkbookPart workbookPart = spreadsheet.AddWorkbookPart();
+                WorkbookPart workbookPart = this.spreadsheet.AddWorkbookPart();
                 workbookPart.Workbook = new Workbook();
                 this.workbook = workbookPart;
 
                 WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
                 worksheetPart.Worksheet = new Worksheet(new SheetData());
 
-                Sheets sheets = spreadsheet.WorkbookPart.Workbook.AppendChild<Sheets>(new Sheets());
-                Sheet sheet = new Sheet() { Id = spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Sheet1" };
+                Sheets sheets = this.spreadsheet.WorkbookPart.Workbook.AppendChild<Sheets>(new Sheets());
+                Sheet sheet = new Sheet() { Id = this.spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = 1, Name = "Sheet1" };
                 sheets.Append(sheet);
                 //this.Save();
+                this.Save();
+                //this.Close();
             }
             else
             {
@@ -97,7 +99,7 @@ namespace excelExport
                 }
             }
         }
-        public Sheet AddNewSheet(string sheetName)
+        public WorksheetPart AddNewSheet(string sheetName)
         {
             if (this.spreadsheet == null)
             {
@@ -111,9 +113,7 @@ namespace excelExport
                 workbookPart.Workbook = new Workbook();
             }
 
-            //  New sheet.xml file: which contains data of a sheet
-            WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
-            worksheetPart.Worksheet = new Worksheet(new SheetData());
+            
             //workbookPart.WorksheetParts.First();
             //  Add to workbook:
             Sheets sheets = spreadsheet.WorkbookPart.Workbook.GetFirstChild<Sheets>();
@@ -131,37 +131,56 @@ namespace excelExport
             }
             Sheet newSheet;
             int isExist = sheets.Elements<Sheet>().Where(s => s.Name.ToString().Equals(sheetName)).Count();
+
+            //  If not exist any worksheet with the name provided, create a new one;
             if(isExist == 0)
             {
+                //  New sheet.xml file: which contains data of a sheet
+                WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                worksheetPart.Worksheet = new Worksheet(new SheetData());
+
                 newSheet = new Sheet() { Id = this.spreadsheet.WorkbookPart.GetIdOfPart(worksheetPart), SheetId = newSheetID, Name = sheetName };
                 sheets.Append(newSheet);
+                return worksheetPart;
             }
             else
             {
-                return sheets.Elements<Sheet>().Where(s => s.Name.ToString().Equals(sheetName)).FirstOrDefault();
+                Sheet selectedSheet = sheets.Elements<Sheet>().Where(s => s.Name.ToString().Equals(sheetName)).FirstOrDefault();
+                string selectedSheetID = selectedSheet.Id;
+                return (WorksheetPart)this.workbook.GetPartById(selectedSheetID);
             }
-            return newSheet;
         }
 
         public WorksheetPart GetWorksheetPartByName(string sheetName)
         {
+            return GetWorksheetPartByName<WorksheetPart>(sheetName);
+        }
+        public T GetWorksheetPartByName<T>(string sheetName)
+        {
+            //  Check the type first;
+            if(typeof(T) != typeof(WorksheetPart) && typeof(T) != typeof(Sheet))
+            {
+                Console.WriteLine("Error: Invalid return type!");
+                return default(T);
+            }
+
             if(this.workbook == null || this.workbook.Workbook == null)
             {
                 Console.WriteLine("Error: This spreadsheet has no workbook!");
-                return null;
+                return default(T);
             }
             if(this.workbook.Workbook.Descendants<Sheets>().Count() == 0
                 || this.workbook.Workbook.Descendants<Sheet>().Count() == 0)
             {
                 Console.WriteLine("Error: This spreadsheet has no sheets!");
-                return null;
+                return default(T);
             }
 
             Sheets sheets = this.workbook.Workbook.GetFirstChild<Sheets>();
             if(sheets == null)
             {
                 Console.WriteLine("Error: this workbook has no sheets elements");
-                return null;
+                return default(T);
             }
             //Sheet selectedSheet = sheets.Elements<Sheet>().First();
             //Console.WriteLine("Name: " + selectedSheet.Name);
@@ -171,12 +190,22 @@ namespace excelExport
             if (selectedSheet == null)
             {
                 Console.WriteLine("Error: this workbook has no '{0}'",sheetName);
-                return null;
+                return default(T);
             }
 
             string selectedSheetID = selectedSheet.Id;
 
-            return (WorksheetPart)this.workbook.GetPartById(selectedSheetID);
+            if( typeof(T) == typeof(WorksheetPart))
+                return (T)Convert.ChangeType(this.workbook.GetPartById(selectedSheetID), typeof(T));
+            else if( typeof(T) == typeof(Sheet))
+            {
+                return (T)Convert.ChangeType(selectedSheet, typeof(T));
+            }
+            else
+            {
+                Console.WriteLine("Error!");
+                return default(T);
+            }
         }
 
         // If Force == true: Get the first sheet to insert, regardless the name;
@@ -203,6 +232,88 @@ namespace excelExport
 
             worksheetPart.Worksheet.Save();
             return true;
+        }
+
+        // If Force == true: Get the first sheet to insert, regardless the name;
+        public string GetCellValue(string addressName, WorksheetPart wsPart=null, bool force=false)
+        {
+            string value = null;
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return null;
+            }
+            if(wsPart == null)
+            {
+                if(force==true)
+                {
+                    if(this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if(wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return null;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
+                    return null;
+                }
+            }
+            Cell theCell = wsPart.Worksheet.Descendants<Cell>()
+                            .Where(c => c.CellReference == addressName).FirstOrDefault();
+            if(theCell == null)
+            {
+                //Console.WriteLine("Warning: The cell is null!");
+                return "";
+            }
+
+            if(theCell.InnerText.Length > 0)
+            {
+                value = theCell.InnerText;
+                // If the cell represents an integer number, you are done. 
+                // For dates, this code returns the serialized value that 
+                // represents the date. The code handles strings and 
+                // Booleans individually. For shared strings, the code 
+                // looks up the corresponding value in the shared string 
+                // table. For Booleans, the code converts the value into 
+                // the words TRUE or FALSE.
+
+                if(theCell.DataType != null)
+                {
+                    switch(theCell.DataType.Value)
+                    {
+                        case CellValues.SharedString:
+                            SharedStringTablePart stringTable = this.workbook.GetPartsOfType<SharedStringTablePart>()
+                                                                    .FirstOrDefault();
+                            if(stringTable != null)
+                            {
+                                value = stringTable.SharedStringTable.ElementAt(int.Parse(value)).InnerText;
+                            }
+                            break;
+                        case CellValues.Boolean:
+                            switch(value)
+                            {
+                                case "0":
+                                    value = "FALSE";
+                                    break;
+                                default:
+                                    value = "TRUE";
+                                    break;
+                            }
+                            break;
+                    }
+                }
+            }
+            return value;
         }
 
         public int InsertSharedStringItem (string text)
