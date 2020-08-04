@@ -31,7 +31,7 @@ namespace excelExport
         public SpreadsheetDocument spreadsheet { get; set; }
         public WorkbookPart workbook { get; set; }
         public SharedStringTablePart sharedStrings { get; set; }
-        
+        public CalculationChainPart calcChain { get; set; }        
         public void Save()
         {
             this.spreadsheet.WorkbookPart.Workbook.Save();
@@ -105,6 +105,10 @@ namespace excelExport
                 if (this.workbook.GetPartsCountOfType<SharedStringTablePart>() > 0)
                 {
                     this.sharedStrings = this.workbook.GetPartsOfType<SharedStringTablePart>().First();
+                }
+                if(this.workbook.GetPartsCountOfType<CalculationChainPart>() >0)
+                {
+                    this.calcChain = this.workbook.GetPartsOfType<CalculationChainPart>().First();
                 }
             }
         }
@@ -508,6 +512,90 @@ namespace excelExport
             return value;
         }
 
+        public Cell InsertFormula(string formula, string columnName, uint rowIndex, WorksheetPart wsPart, bool force=false)
+        {
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return null;
+            }
+            if (wsPart == null)
+            {
+                if (force == true)
+                {
+                    if (this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if (wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return null;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
+                    return null;
+                }
+            }
+
+            if(this.calcChain == null)
+            {
+                Console.WriteLine("InsertFormula [WARNING]: This spreadsheet does not have calcChainPart, auto create new one!");
+                this.calcChain = this.workbook.AddNewPart<CalculationChainPart>();
+                this.calcChain.CalculationChain = new CalculationChain();
+            }
+
+            Cell cell = this.InsertCellInWorksheet(columnName, rowIndex, wsPart);
+            if(cell == null)
+            {
+                Console.WriteLine("InsertFormula [ERROR]: Cannot insert cell at {0}!", columnName + rowIndex);
+                return null;
+            }
+
+            cell.CellFormula = new CellFormula(formula);
+            cell.CellValue = new CellValue("0");
+
+            string wsPartID = this.workbook.GetIdOfPart(wsPart);
+            if(wsPartID == null)
+            {
+                Console.WriteLine("InsertFormula [ERROR]: Internal error!");
+                return null;
+            }
+            Sheets sheets = this.workbook.Workbook.GetFirstChild<Sheets>();
+
+            Sheet correspondingSheet = sheets.Elements<Sheet>()
+                                        .Where(e => string.Compare(e.Id, wsPartID, true) == 0).FirstOrDefault();
+            if(correspondingSheet == null)
+            {
+                Console.WriteLine("InsertFormula [ERROR]: Internal error!");
+                return null;
+            }
+
+            int sheetID; 
+            bool res = int.TryParse(correspondingSheet.SheetId.ToString(),out sheetID);
+            if(res == false)
+            {
+                Console.WriteLine("InsertFormula [ERROR]: Internal error!");
+                return null;
+            }
+            CalculationCell calCel = new CalculationCell() { CellReference = cell.CellReference, NewLevel=true, SheetId=sheetID };
+            this.calcChain.CalculationChain.Append(calCel);
+            this.workbook.Workbook.CalculationProperties.ForceFullCalculation = true;
+            this.workbook.Workbook.CalculationProperties.FullCalculationOnLoad = true;
+            this.workbook.Workbook.Save();
+            return cell;
+        }
+        public bool InsertFormulaChain(Cell baseFormulaCell,string from, string to, WorksheetPart wsPart, bool force=false)
+        {
+            return false;
+        }
         public int InsertSharedStringItem (string text)
         {
             if (this.workbook == null || this.workbook.Workbook == null)

@@ -151,91 +151,96 @@ namespace excelExport
 
         static void Main(string[] args)
         {
-            //CreateSpreadsheetWorkBook("G:\\Csharp\\excelExport\\test.xlsx");
-            //CreateAddDataSpreadsheetWorkBook("G:\\Csharp\\excelExport\\test_sheets.xlsx");
-            //for(uint i = 2; i < 10; i++)
+            
+
+            //CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_style.xlsx");
+            //string sheetName = "mySheet2";
+            //WorksheetPart newsheet = test_sheet.AddNewSheet(sheetName);
+            //if (newsheet != null)
             //{
-            //    AddDataSpreadsheetWorkBook("G:\\Csharp\\excelExport\\test_sheets.xlsx", "A", i, "200");
+            //    Console.WriteLine("Successful add sheets");
+            //}
+            //else
+            //{
+            //    Console.WriteLine("Failed to add sheets");
+            //    //return;
+            //}
+            //if (test_sheet.spreadsheet != null)
+            //{
+            //    test_sheet.Save();
+            //    //test_sheet.Close();
+            //}
+            //WorksheetPart sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
+            //if (sheet1 == null)
+            //{
+            //    Console.WriteLine("There is no {0} in this speadsheet!", sheetName);
+            //    //return;
+            //}
+            //else
+            //{
+            //    int maxNum = 10;
+            //    for (int i = 1; i < maxNum; i++)
+            //    {
+            //        string numStr = "Num" + (i * 100).ToString();
+            //        test_sheet.InsertText(numStr, "C", (uint)i, sheet1);
+            //    }
+            //    Console.WriteLine("Successful add {0} texts to {1}", maxNum, sheetName);
+            //}
+            //if (test_sheet.spreadsheet != null)
+            //{
+            //    test_sheet.Save();
+            //    //test_sheet.Close();
+            //}
+            //Console.WriteLine(">> Test default sheet, Getting first 5 A-row:");
+            //for (int i = 1; i <= 5; i++)
+            //{
+            //    string tmp = test_sheet.GetCellValue("A" + i, null, true);
+            //    Console.WriteLine("A{0}: {1}", i, tmp);
             //}
 
-            CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_style.xlsx");
-            string sheetName = "mySheet2";
-            WorksheetPart newsheet = test_sheet.AddNewSheet(sheetName);
-            if (newsheet != null)
-            {
-                Console.WriteLine("Successful add sheets");
-            }
-            else
-            {
-                Console.WriteLine("Failed to add sheets");
-                //return;
-            }
-            if (test_sheet.spreadsheet != null)
-            {
-                test_sheet.Save();
-                //test_sheet.Close();
-            }
-            WorksheetPart sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
-            if (sheet1 == null)
-            {
-                Console.WriteLine("There is no {0} in this speadsheet!", sheetName);
-                //return;
-            }
-            else
-            {
-                int maxNum = 10;
-                for (int i = 1; i < maxNum; i++)
-                {
-                    string numStr = "Num" + (i * 100).ToString();
-                    test_sheet.InsertText(numStr, "C", (uint)i, sheet1);
-                }
-                Console.WriteLine("Successful add {0} texts to {1}", maxNum, sheetName);
-            }
-            if (test_sheet.spreadsheet != null)
-            {
-                test_sheet.Save();
-                //test_sheet.Close();
-            }
-            Console.WriteLine(">> Test default sheet, Getting first 5 A-row:");
-            for (int i = 1; i <= 5; i++)
-            {
-                string tmp = test_sheet.GetCellValue("A" + i, null, true);
-                Console.WriteLine("A{0}: {1}", i, tmp);
-            }
+            //Console.WriteLine(">> Test sheet, Getting first 15 C-row:");
+            //WorksheetPart getSheet = test_sheet.GetWorksheetPartByName("mySheet2");
+            //for (int i = 1; i <= 15; i++)
+            //{
+            //    string tmp = test_sheet.GetCellValue("C" + i, getSheet);
+            //    Console.WriteLine("C{0}: {1}", i, tmp);
+            //}
 
-            Console.WriteLine(">> Test sheet, Getting first 15 C-row:");
-            WorksheetPart getSheet = test_sheet.GetWorksheetPartByName("mySheet2");
-            for (int i = 1; i <= 15; i++)
-            {
-                string tmp = test_sheet.GetCellValue("C" + i, getSheet);
-                Console.WriteLine("C{0}: {1}", i, tmp);
-            }
+            //Console.WriteLine(">> Test sheet, Getting first 10 D-row:");
+            //getSheet = test_sheet.GetWorksheetPartByName("mysheet");
+            //for (int i = 1; i <= 15; i++)
+            //{
+            //    string tmp = test_sheet.GetCellValue("A" + i, getSheet);
+            //    Console.WriteLine("D{0}: {1}", i, tmp);
+            //}
 
-            Console.WriteLine(">> Test sheet, Getting first 10 D-row:");
-            getSheet = test_sheet.GetWorksheetPartByName("mysheet");
-            for (int i = 1; i <= 15; i++)
-            {
-                string tmp = test_sheet.GetCellValue("A" + i, getSheet);
-                Console.WriteLine("D{0}: {1}", i, tmp);
-            }
+            //Console.WriteLine(">> Test delete text, :");
+            //getSheet = test_sheet.GetWorksheetPartByName("Sheet1");
+            //for (int i = 1; i <= 4; i++)
+            //{
+            //    bool res = test_sheet.DeleteCell("A", (uint)i, getSheet);
+            //    if (res == true)
+            //        Console.WriteLine("Deleted cell at {0}!", "A" + i);
+            //}
 
-            Console.WriteLine(">> Test delete text, :");
-            getSheet = test_sheet.GetWorksheetPartByName("Sheet1");
-            for (int i = 1; i <= 4; i++)
-            {
-                bool res = test_sheet.DeleteCell("A", (uint)i, getSheet);
-                if (res == true)
-                    Console.WriteLine("Deleted cell at {0}!", "A" + i);
-            }
+            //Console.WriteLine(">> Test insert number:");
+            //for(int i = 1; i <= 5; i++)
+            //{
+            //    bool res = test_sheet.InsertValue((i * 100).ToString(), "B", (uint)i, getSheet, CellValues.Number);
+            //    if(res == true)
+            //    {
+            //        Console.WriteLine("Insert {0} number at {1}!", i * 100, "B" + i);
+            //    }
+            //}
+            CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_formula.xlsx");
+            string sheetName = "Sheet1";
+            WorksheetPart Sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
 
-            Console.WriteLine(">> Test insert number:");
-            for(int i = 1; i <= 5; i++)
+            Cell refCell =test_sheet.InsertFormula("SUM(A1,B1)/7+A1", "D", 1, Sheet1);
+
+            if(refCell != null)
             {
-                bool res = test_sheet.InsertValue((i * 100).ToString(), "B", (uint)i, getSheet, CellValues.Number);
-                if(res == true)
-                {
-                    Console.WriteLine("Insert {0} number at {1}!", i * 100, "B" + i);
-                }
+                Console.WriteLine("Successful added formula to C1!");
             }
 
             if (test_sheet.spreadsheet != null)
