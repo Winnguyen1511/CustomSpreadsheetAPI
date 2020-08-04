@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<x:worksheet xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+    <x:sheetData>
+        <x:row r="1">
+            <x:c r="B1" t="n">
+                <x:v>100</x:v>
+            </x:c>
+        </x:row>
+        <x:row r="2">
+            <x:c r="B2" t="n">
+                <x:v>200</x:v>
+            </x:c>
+        </x:row>
+        <x:row r="3">
+            <x:c r="B3" t="n">
+                <x:v>300</x:v>
+            </x:c>
+        </x:row>
+        <x:row r="4">
+            <x:c r="B4" t="n">
+                <x:v>400</x:v>
+            </x:c>
+        </x:row>
+        <x:row r="5">
+            <x:c r="B5" t="n">
+                <x:v>500</x:v>
+            </x:c>
+        </x:row>
+    </x:sheetData>
+</x:worksheet>

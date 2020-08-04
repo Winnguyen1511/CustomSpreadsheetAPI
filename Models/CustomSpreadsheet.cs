@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace excelExport
 {
@@ -216,29 +217,156 @@ namespace excelExport
             }
         }
 
-        // If Force == true: Get the first sheet to insert, regardless the name;
-        public bool InsertText(string text, string columnName, uint rowIndex, WorksheetPart worksheetPart=null, bool force=false)
+        public bool InsertValue(string value, string columnName, uint rowIndex, WorksheetPart wsPart, EnumValue<CellValues> type=null, bool force=false)
         {
-            int index = this.InsertSharedStringItem(text);
-
-            if(worksheetPart == null)
+            if (this.workbook == null || this.workbook.Workbook == null)
             {
-                if(force == true)
-                {   
-                    if(this.workbook.GetPartsOfType<WorksheetPart>().Count() > 0)
-                        worksheetPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
-                }
-                if( worksheetPart == null)
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return false;
+            }
+            if (wsPart == null)
+            {
+                if (force == true)
                 {
-                    Console.WriteLine("Error: This spreadsheet has no according worksheet!");
+                    if (this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if (wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return false;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
                     return false;
                 }
             }
-            Cell cell = InsertCellInWorksheet(columnName, rowIndex, worksheetPart);
+            Cell cell = this.InsertCellInWorksheet(columnName, rowIndex, wsPart);
+            if(cell == null)
+            {
+                Console.WriteLine("Error: Cannot get according cell at {0}!", columnName + rowIndex);
+                return false;
+            }
+            bool res;
+            switch(type.Value)
+            {
+                case CellValues.Number:
+                    double num;
+                    res = double.TryParse(value, out num);
+                    if (res == false)
+                    {
+                        Console.WriteLine("InsertValue: [ERROR] Invalid data type!");
+                        return false;
+                    }
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                case CellValues.Date:
+                    DateTime date;
+                    res = DateTime.TryParse(value, out date);
+                    if(res == false)
+                    {
+                        Console.WriteLine("InsertValue: [ERROR] Invalid data type!");
+                        return false;
+                    }
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                case CellValues.Boolean:
+                    bool ret;
+                    res = bool.TryParse(value, out ret);
+                    if (res == false)
+                    {
+                        Console.WriteLine("InsertValue: [ERROR] Invalid data type!");
+                        return false;
+                    }
+                    if(ret == false)
+                    {
+                        value = "FALSE";
+                    }
+                    else
+                    {
+                        value = "TRUE";
+                    }
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                case CellValues.SharedString:
+                    int index = this.InsertSharedStringItem(value);
+                    if(index == -1)
+                    {
+                        Console.WriteLine("InsertValue: [ERROR] Internal error!");
+                        return false;
+                    }
+                    cell.CellValue = new CellValue(index.ToString());
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                case CellValues.Error:
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                case CellValues.String:
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                case CellValues.InlineString:
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = new EnumValue<CellValues>(type.Value);
+                    return true;
+                default:
+                    cell.CellValue = new CellValue(value);
+                    cell.DataType = null;
+                    return true;
+            }
+        }
+        // If Force == true: Get the first sheet to insert, regardless the name;
+        public bool InsertText(string text, string columnName, uint rowIndex, WorksheetPart wsPart=null, bool force=false)
+        {
+            int index = this.InsertSharedStringItem(text);
+
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return false;
+            }
+            if (wsPart == null)
+            {
+                if (force == true)
+                {
+                    if (this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if (wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return false;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
+                    return false;
+                }
+            }
+            Cell cell = InsertCellInWorksheet(columnName, rowIndex, wsPart);
             cell.CellValue = new CellValue(index.ToString());
             cell.DataType = new EnumValue<CellValues>(CellValues.SharedString);
 
-            worksheetPart.Worksheet.Save();
+            wsPart.Worksheet.Save();
             return true;
         }
         public bool DeleteCell(string columnName, uint rowIndex, WorksheetPart wsPart=null, bool force=false)
@@ -382,7 +510,12 @@ namespace excelExport
 
         public int InsertSharedStringItem (string text)
         {
-            if(this.sharedStrings == null)
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return -1;
+            }
+            if (this.sharedStrings == null)
             {
                 Console.WriteLine("Warning: This spreadsheet has no sharedStrings, auto created new one!");
                 if(this.workbook.GetPartsCountOfType<SharedStringTablePart>() > 0)

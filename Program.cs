@@ -227,6 +227,17 @@ namespace excelExport
                 if (res == true)
                     Console.WriteLine("Deleted cell at {0}!", "A" + i);
             }
+
+            Console.WriteLine(">> Test insert number:");
+            for(int i = 1; i <= 5; i++)
+            {
+                bool res = test_sheet.InsertValue((i * 100).ToString(), "B", (uint)i, getSheet, CellValues.Number);
+                if(res == true)
+                {
+                    Console.WriteLine("Insert {0} number at {1}!", i * 100, "B" + i);
+                }
+            }
+
             if (test_sheet.spreadsheet != null)
             {
                 test_sheet.Save();
