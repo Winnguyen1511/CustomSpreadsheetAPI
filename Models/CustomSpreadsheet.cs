@@ -8,6 +8,7 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
+using System.Text.RegularExpressions;
 
 namespace excelExport
 {
@@ -592,9 +593,157 @@ namespace excelExport
             this.workbook.Workbook.Save();
             return cell;
         }
-        public bool InsertFormulaChain(Cell baseFormulaCell,string from, string to, WorksheetPart wsPart, bool force=false)
+        public bool InsertFormulaChain(string formula,string fromCell, string toCell, WorksheetPart wsPart=null, bool force=false)
         {
-            return false;
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return false;
+            }
+            if (wsPart == null)
+            {
+                if (force == true)
+                {
+                    if (this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if (wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return false;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
+                    return false;
+                }
+            }
+
+            if (this.calcChain == null)
+            {
+                Console.WriteLine("InsertFormulaChain [WARNING]: This spreadsheet does not have calcChainPart, auto create new one!");
+                this.calcChain = this.workbook.AddNewPart<CalculationChainPart>();
+                this.calcChain.CalculationChain = new CalculationChain();
+            }
+
+            string fromCol, toCol, tmpFromRow, tmpToRow;
+            uint fromRow, toRow;
+            fromCol = this.GetPartFromAddress(fromCell,false);
+            if(fromCol == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Invalid fromCell, got {0}", fromCell);
+                return false;
+            }
+            toCol = this.GetPartFromAddress(toCell, false);
+            if(toCol == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Invalid fromCell, got {0}", toCell);
+                return false;
+            }
+
+            if(!fromCol.Equals(toCol))
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Cannot add calcChain in different column, got {0}, {1}",fromCell, toCell);
+                return false;
+            }
+
+            tmpFromRow = this.GetPartFromAddress(fromCell, true);
+            
+
+            if (tmpFromRow == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Invalid fromCell, got {0}", fromCell);
+                return false;
+            }
+            tmpToRow = this.GetPartFromAddress(toCell, true);
+            if (tmpToRow == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Invalid fromCell, got {0}", toCell);
+                return false;
+            }
+
+            fromRow = uint.Parse(tmpFromRow);
+            toRow = uint.Parse(tmpToRow);
+
+            //  Get the corresponding sheet:
+            string wsPartID = this.workbook.GetIdOfPart(wsPart);
+            if (wsPartID == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Internal error!");
+                return false;
+            }
+            Sheets sheets = this.workbook.Workbook.GetFirstChild<Sheets>();
+
+            Sheet correspondingSheet = sheets.Elements<Sheet>()
+                                        .Where(e => string.Compare(e.Id, wsPartID, true) == 0).FirstOrDefault();
+            if (correspondingSheet == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Internal error!");
+                return false;
+            }
+
+            int sheetID;
+            bool res = int.TryParse(correspondingSheet.SheetId.ToString(), out sheetID);
+            if (res == false)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Internal error!");
+                return false;
+            }
+
+            Cell baseCell = this.InsertCellInWorksheet(fromCol, fromRow, wsPart);
+            if (baseCell == null)
+            {
+                Console.WriteLine("InsertFormulaChain [ERROR]: Cannot insert cell at {0}!",  fromCell);
+                return false;
+            }
+            string baseCellRef = fromCell + ":" + toCell;
+            uint baseCellSi = 0;
+            IEnumerable<CellFormula> listFomula = wsPart.Worksheet.Descendants<CellFormula>()
+                                                        .Where(f => {
+                                                            if (f.FormulaType != null)
+                                                                return f.FormulaType == CellFormulaValues.Shared;
+                                                            return false;
+                                                        });
+            if (listFomula.Count() > 0)
+            {
+                baseCellSi =listFomula.Select(f => f.SharedIndex).Max() + 1;
+            }
+                                                        
+            baseCell.CellFormula = new CellFormula(formula) { FormulaType=new EnumValue<CellFormulaValues>(CellFormulaValues.Shared),
+                                                                Reference=baseCellRef, SharedIndex=baseCellSi};
+            baseCell.CellValue = new CellValue("0");
+
+            CalculationCell baseCellCal = new CalculationCell() { CellReference = baseCell.CellReference, SheetId = sheetID };
+            this.calcChain.CalculationChain.Append(baseCellCal);
+            bool trailAddRet=true;
+            for(uint i = fromRow +1; i <= toRow; i++)
+            {
+                Cell trailCell = this.InsertCellInWorksheet(fromCol, i, wsPart);
+                if(trailCell != null)
+                {
+                    trailCell.CellFormula = new CellFormula() { FormulaType= new EnumValue<CellFormulaValues>(CellFormulaValues.Shared),
+                                                                SharedIndex=baseCellSi};
+                    trailCell.CellValue = new CellValue("0");
+                    CalculationCell trailCellCal = new CalculationCell() { CellReference = trailCell.CellReference, SheetId = sheetID };
+                    this.calcChain.CalculationChain.Append(trailCellCal);
+                }
+                else
+                {
+                    Console.WriteLine("InsertFormularChain [WARNING]: Cannot add formula at trailing cell {0}", fromCol + i);
+                    trailAddRet = false;
+                }
+            }
+            this.workbook.Workbook.CalculationProperties.ForceFullCalculation = true;
+            this.workbook.Workbook.CalculationProperties.FullCalculationOnLoad = true;
+            this.workbook.Workbook.Save();
+            return trailAddRet;
         }
         public int InsertSharedStringItem (string text)
         {
@@ -774,7 +923,6 @@ namespace excelExport
                 return newCell;
             }
         }
-
         public Cell GetCellFromWorksheet(string columnName, uint rowIndex, WorksheetPart worksheetPart)
         {
             IEnumerable<Row> rows = worksheetPart.Worksheet.GetFirstChild<SheetData>().Elements<Row>()
@@ -793,6 +941,23 @@ namespace excelExport
             }
             return cells.First();
         }
-        
+        public string GetPartFromAddress(string cellAddress, bool choose)
+        {
+            string regex;
+            if(choose == false)
+            {
+                regex = @"[A-Z]";
+            }
+            else
+            {
+                regex = @"\d";
+            }
+            MatchCollection matchCollection = Regex.Matches(cellAddress, regex);
+            if(matchCollection.Count > 1)
+            {
+                return null;
+            }
+            return matchCollection[0].Value;
+        }
     }
 }

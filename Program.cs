@@ -242,7 +242,12 @@ namespace excelExport
             {
                 Console.WriteLine("Successful added formula to C1!");
             }
-
+            Console.WriteLine("Tess add Calculation Chain!");
+            bool res = test_sheet.InsertFormulaChain("SUM(A2,B2)/7+A2", "D2", "D5",Sheet1);
+            if(res == true)
+            {
+                Console.WriteLine("Successful added chain of calculation!");
+            }
             if (test_sheet.spreadsheet != null)
             {
                 test_sheet.Save();
