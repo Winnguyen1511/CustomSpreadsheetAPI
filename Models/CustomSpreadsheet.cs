@@ -222,6 +222,8 @@ namespace excelExport
             }
         }
 
+
+
         public bool InsertValue(string value, string columnName, uint rowIndex, WorksheetPart wsPart, EnumValue<CellValues> type=null, bool force=false)
         {
             if (this.workbook == null || this.workbook.Workbook == null)
@@ -374,6 +376,163 @@ namespace excelExport
             wsPart.Worksheet.Save();
             return true;
         }
+        
+        public bool MergeCells(string fromCell, string toCell, WorksheetPart wsPart=null, bool force=false)
+        {
+            if (this.workbook == null || this.workbook.Workbook == null)
+            {
+                Console.WriteLine("Error: This spreadsheet has no workbook!");
+                return false;
+            }
+            if (wsPart == null)
+            {
+                if (force == true)
+                {
+                    if (this.workbook.GetPartsOfType<WorksheetPart>().Count() <= 0)
+                    {
+                        Console.WriteLine("Error: This spreadsheet has no sheets");
+                    }
+                    else
+                    {
+                        wsPart = this.workbook.GetPartsOfType<WorksheetPart>().FirstOrDefault();
+                        if (wsPart == null)
+                        {
+                            Console.WriteLine("Error: Internal error while getting sheet!");
+                            return false;
+                        }
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: This speardsheet has no according worksheet.");
+                    return false;
+                }
+            }
+
+            string fromCol, toCol, tmpFromRow, tmpToRow;
+            char fromCol_C, toCol_C;
+            uint fromRow, toRow;
+            fromCol = this.GetPartFromAddress(fromCell, false);
+            if (fromCol == null)
+            {
+                Console.WriteLine("MergeCells [ERROR]: Invalid fromCell, got {0}", fromCell);
+                return false;
+            }
+            fromCol_C = fromCol[0];
+            toCol = this.GetPartFromAddress(toCell, false);
+            if (toCol == null)
+            {
+                Console.WriteLine("MergeCells [ERROR]: Invalid fromCell, got {0}", toCell);
+                return false;
+            }
+            toCol_C = toCol[0];
+
+            tmpFromRow = this.GetPartFromAddress(fromCell, true);
+
+
+            if (tmpFromRow == null)
+            {
+                Console.WriteLine("MergeCells [ERROR]: Invalid fromCell, got {0}", fromCell);
+                return false;
+            }
+            tmpToRow = this.GetPartFromAddress(toCell, true);
+            if (tmpToRow == null)
+            {
+                Console.WriteLine("MergeCells [ERROR]: Invalid fromCell, got {0}", toCell);
+                return false;
+            }
+
+            fromRow = uint.Parse(tmpFromRow);
+            toRow = uint.Parse(tmpToRow);
+
+            if(fromCol_C > toCol_C || fromRow > toRow)
+            {
+                Console.WriteLine("MergeCells [ERROR]: Invalid cell order, got {0} > {1}",fromCell, toCell);
+                return false;
+            }
+            
+            for(uint i = (char)fromCol_C; i <= (char)toCol_C; i++)
+            {
+                for(uint j = fromRow; j <= toRow; j++)
+                {
+                    Cell cell = this.InsertCellInWorksheet("" + (char)i, j, wsPart);
+                    if(cell == null)
+                    {
+                        Console.WriteLine("MergeCells [WARNING]: Invalid cell create at {0}", (""+(char)i)+j);
+                    }
+                }
+            }
+
+            Worksheet worksheet = wsPart.Worksheet;
+
+            MergeCells mergeCells;
+            if (worksheet.Elements<MergeCells>().Count() > 0)
+            {
+                mergeCells = worksheet.Elements<MergeCells>().First();
+            }
+            else
+            {
+                mergeCells = new MergeCells();
+
+                // Insert a MergeCells object into the specified position.
+                if (worksheet.Elements<CustomSheetView>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<CustomSheetView>().First());
+                }
+                else if (worksheet.Elements<DataConsolidate>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<DataConsolidate>().First());
+                }
+                else if (worksheet.Elements<SortState>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<SortState>().First());
+                }
+                else if (worksheet.Elements<AutoFilter>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<AutoFilter>().First());
+                }
+                else if (worksheet.Elements<Scenarios>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<Scenarios>().First());
+                }
+                else if (worksheet.Elements<ProtectedRanges>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<ProtectedRanges>().First());
+                }
+                else if (worksheet.Elements<SheetProtection>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<SheetProtection>().First());
+                }
+                else if (worksheet.Elements<SheetCalculationProperties>().Count() > 0)
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<SheetCalculationProperties>().First());
+                }
+                else
+                {
+                    worksheet.InsertAfter(mergeCells, worksheet.Elements<SheetData>().First());
+                }
+            }
+
+            // Create the merged cell and append it to the MergeCells collection.
+            MergeCell mergeCell = new MergeCell() { Reference = new StringValue(fromCell + ":" + toCell) };
+            IEnumerable<MergeCell> listCollapse = mergeCells.Elements<MergeCell>()
+                                                                .Where(mc => isCollapse(mc.Reference.ToString(), mergeCell.Reference.ToString()));
+            if(listCollapse != null)
+            {
+                foreach (MergeCell mc in listCollapse)
+                {
+                    Console.WriteLine("MergeCell [WARNING]: merge cell {0} collapsed with {1}! AutoRemoved"
+                                        , mc.Reference.ToString(), mergeCell.Reference.ToString());
+                    mc.Remove();
+                }
+            }
+            
+            mergeCells.Append(mergeCell);
+            return true;
+        }
+
+        
         public bool DeleteCell(string columnName, uint rowIndex, WorksheetPart wsPart=null, bool force=false)
         {
             if (this.workbook == null || this.workbook.Workbook == null)
@@ -987,6 +1146,83 @@ namespace excelExport
                 return null;
             }
             return matchCollection[0].Value;
+        }
+
+        private class CustomCellCordinate
+        {
+            public uint x { get; set; }
+            public uint y { get; set; }
+            public static string GetPartFromAddress(string cellAddress, bool choose)
+            {
+                string regex;
+                if (choose == false)
+                {
+                    regex = @"[A-Z]";
+                }
+                else
+                {
+                    regex = @"\d";
+                }
+                MatchCollection matchCollection = Regex.Matches(cellAddress, regex);
+                if (matchCollection.Count > 1)
+                {
+                    return null;
+                }
+                return matchCollection[0].Value;
+            }
+            public CustomCellCordinate(string address)
+            {
+                string strX, strY;
+                strX = GetPartFromAddress(address, false);
+                strY = GetPartFromAddress(address, true);
+                if(strX == null || strY == null)
+                {
+                    x = 0;
+                    y = 0;
+                }
+                uint tmp;
+                strX = (uint)strX[0]+"";
+                bool res = uint.TryParse(strX, out tmp);
+                
+                if(res)
+                {
+                    x = tmp;
+                }
+                else
+                {
+                    x = 0;
+                }
+                res = uint.TryParse(strY, out tmp);
+                if (res)
+                {
+                    y = tmp;
+                }
+                else
+                {
+                    y = 0;
+                }
+            }
+        }
+        private bool isCollapse(string ref1, string ref2)
+        {
+            string ref1Left, ref1Right, ref2Left, ref2Right;
+
+            string[] refSplit = ref1.Split(':');
+            ref1Left = refSplit[0]; ref1Right = refSplit[1];
+            refSplit = ref2.Split(':');
+            ref2Left = refSplit[0]; ref2Right = refSplit[1];
+
+            CustomCellCordinate ref1L, ref1R, ref2L, ref2R;
+            ref1L = new CustomCellCordinate(ref1Left);
+            ref1R = new CustomCellCordinate(ref1Right);
+            ref2L = new CustomCellCordinate(ref2Left);
+            ref2R = new CustomCellCordinate(ref2Right);
+
+            if (ref1L.x > ref2R.x || ref2L.x > ref1R.x)
+                return false;
+            if (ref1L.y > ref2R.y || ref2L.y > ref1R.y)
+                return false;
+            return true;
         }
     }
 }

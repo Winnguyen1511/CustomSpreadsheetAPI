@@ -151,7 +151,7 @@ namespace excelExport
 
         static void Main(string[] args)
         {
-            
+
 
             //CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_style.xlsx");
             //string sheetName = "mySheet2";
@@ -232,28 +232,57 @@ namespace excelExport
             //        Console.WriteLine("Insert {0} number at {1}!", i * 100, "B" + i);
             //    }
             //}
-            CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_formula.xlsx");
+            //CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_formula.xlsx");
+            //string sheetName = "Sheet1";
+            //WorksheetPart Sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
+
+            //Cell refCell =test_sheet.InsertFormula("SUM(A1,B1)/7+A1", "D", 1, Sheet1);
+
+            //if(refCell != null)
+            //{
+            //    Console.WriteLine("Successful added formula to C1!");
+            //}
+            //Console.WriteLine("Tess add Calculation Chain!");
+            //bool res = test_sheet.InsertFormulaChain("SUM(A2,B2)/7+A2", "D2", "D5",Sheet1);
+            //if(res == true)
+            //{
+            //    Console.WriteLine("Successful added chain of calculation!");
+            //}
+            //if (test_sheet.spreadsheet != null)
+            //{
+            //    test_sheet.Save();
+            //    test_sheet.Close();
+            //}
+            CustomSpreadsheet test_sheet = new CustomSpreadsheet("G:\\Csharp\\excelExport\\test_merge.xlsx");
             string sheetName = "Sheet1";
             WorksheetPart Sheet1 = test_sheet.GetWorksheetPartByName(sheetName);
 
-            Cell refCell =test_sheet.InsertFormula("SUM(A1,B1)/7+A1", "D", 1, Sheet1);
+            Console.WriteLine("Test merge cell:");
+            bool res = test_sheet.MergeCells("A1", "C4",Sheet1);
 
-            if(refCell != null)
+            if(res)
             {
-                Console.WriteLine("Successful added formula to C1!");
+                Console.WriteLine("Successful merge cells");
             }
-            Console.WriteLine("Tess add Calculation Chain!");
-            bool res = test_sheet.InsertFormulaChain("SUM(A2,B2)/7+A2", "D2", "D5",Sheet1);
-            if(res == true)
+            else
             {
-                Console.WriteLine("Successful added chain of calculation!");
+                Console.WriteLine("Something is wrong!");
+            }
+            res = test_sheet.MergeCells("C4", "E5", Sheet1);
+
+            if (res)
+            {
+                Console.WriteLine("Successful merge cells");
+            }
+            else
+            {
+                Console.WriteLine("Something is wrong!");
             }
             if (test_sheet.spreadsheet != null)
             {
                 test_sheet.Save();
                 test_sheet.Close();
             }
-
             Console.ReadKey();
         }
     }
