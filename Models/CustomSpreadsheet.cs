@@ -586,8 +586,17 @@ namespace excelExport
                 Console.WriteLine("InsertFormula [ERROR]: Internal error!");
                 return null;
             }
-            CalculationCell calCel = new CalculationCell() { CellReference = cell.CellReference, NewLevel=true, SheetId=sheetID };
-            this.calcChain.CalculationChain.Append(calCel);
+            CalculationCell calCel;
+            //  If there is already cal cell at CellReference in SheetID, no need to add new:
+            calCel = this.calcChain.CalculationChain.Elements<CalculationCell>()
+                                                    .Where(c => c.CellReference == cell.CellReference && c.SheetId == sheetID)
+                                                    .FirstOrDefault();
+            if(calCel == null)
+            {
+                calCel = new CalculationCell() { CellReference = cell.CellReference, NewLevel = true, SheetId = sheetID };
+                this.calcChain.CalculationChain.Append(calCel);
+            }
+            
             this.workbook.Workbook.CalculationProperties.ForceFullCalculation = true;
             this.workbook.Workbook.CalculationProperties.FullCalculationOnLoad = true;
             this.workbook.Workbook.Save();
@@ -713,15 +722,23 @@ namespace excelExport
                                                         });
             if (listFomula.Count() > 0)
             {
-                baseCellSi =listFomula.Select(f => f.SharedIndex).Max() + 1;
+                baseCellSi =listFomula.Select(f => uint.Parse(f.SharedIndex.ToString())).Max() + 1;
             }
                                                         
             baseCell.CellFormula = new CellFormula(formula) { FormulaType=new EnumValue<CellFormulaValues>(CellFormulaValues.Shared),
                                                                 Reference=baseCellRef, SharedIndex=baseCellSi};
             baseCell.CellValue = new CellValue("0");
 
-            CalculationCell baseCellCal = new CalculationCell() { CellReference = baseCell.CellReference, SheetId = sheetID };
-            this.calcChain.CalculationChain.Append(baseCellCal);
+            CalculationCell baseCellCal;
+            baseCellCal = this.calcChain.CalculationChain.Elements<CalculationCell>()
+                                                    .Where(c => c.CellReference == baseCell.CellReference && c.SheetId == sheetID)
+                                                    .FirstOrDefault();
+            if (baseCellCal == null)
+            {
+                baseCellCal = new CalculationCell() { CellReference = baseCell.CellReference, SheetId = sheetID };
+                this.calcChain.CalculationChain.Append(baseCellCal);
+            }
+
             bool trailAddRet=true;
             for(uint i = fromRow +1; i <= toRow; i++)
             {
@@ -731,8 +748,20 @@ namespace excelExport
                     trailCell.CellFormula = new CellFormula() { FormulaType= new EnumValue<CellFormulaValues>(CellFormulaValues.Shared),
                                                                 SharedIndex=baseCellSi};
                     trailCell.CellValue = new CellValue("0");
-                    CalculationCell trailCellCal = new CalculationCell() { CellReference = trailCell.CellReference, SheetId = sheetID };
-                    this.calcChain.CalculationChain.Append(trailCellCal);
+                    CalculationCell trailCellCal;
+                    trailCellCal = this.calcChain.CalculationChain.Elements<CalculationCell>()
+                                                    .Where(c => c.CellReference == trailCell.CellReference && c.SheetId == sheetID)
+                                                    .FirstOrDefault();
+                    if(trailCellCal == null)
+                    {
+                        trailCellCal = new CalculationCell() { CellReference = trailCell.CellReference, SheetId = sheetID };
+                        this.calcChain.CalculationChain.Append(trailCellCal);
+                    }
+                    else
+                    {
+                        if (trailCellCal.NewLevel != null)
+                            trailCellCal.NewLevel = null;
+                    }
                 }
                 else
                 {
